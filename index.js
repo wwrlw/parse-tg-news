@@ -18,6 +18,8 @@ mongoClient.connect().then(() => {
   console.log('✅ Connected to MongoDB');
 });
 
+const OLLAMA_URL = process.env.OLLAMA_URL || 'http://127.0.0.1:11434';
+
 fastify.post('/chat', async (request, reply) => {
   const { prompt } = request.body;
 
@@ -26,7 +28,7 @@ fastify.post('/chat', async (request, reply) => {
   }
 
   try {
-    const response = await axios.post('http://127.0.0.1:11434/api/generate', {
+    const response = await axios.post(`${OLLAMA_URL}/api/generate`, {
       model: 'llama3.2:latest',
       prompt,
       stream: false
@@ -53,7 +55,7 @@ fastify.post('/make-unique', async (req, reply) => {
   for (const post of posts) {
     const prompt = `Перефразируй данный пост: ${post.original_text || post.text}`;
     try {
-      const response = await axios.post('http://127.0.0.1:11434/api/generate', {
+      const response = await axios.post(`${OLLAMA_URL}/api/generate`, {
         model: 'llama3.2:latest',
         prompt: `
       Ты — профессиональный копирайтер. Твоя задача — переформулировать следующий текст, сохранив его смысл, но сделав его более уникальным и читабельным. Избегай повторов и клише, используй литературный стиль, как если бы ты писал для новостного телеграм-канала.  
@@ -91,7 +93,7 @@ async function uniqueWorker() {
     }
     const prompt = `Сделай этот новостной пост уникальным: ${post.original_text || post.text}`;
     try {
-      const response = await axios.post('http://127.0.0.1:11434/api/generate', {
+      const response = await axios.post(`${OLLAMA_URL}/api/generate`, {
         model: 'llama3.2:latest',
         prompt,
         stream: false
