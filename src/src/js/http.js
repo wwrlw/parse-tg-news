@@ -36,8 +36,22 @@ instance.interceptors.request.use(
 );
 
 let http = {
-    posts: function (callback, errorCallback) {
-        instance.get('/posts')
+    posts: function (params = {}, callback, errorCallback) {
+        const queryParams = new URLSearchParams();
+        
+        if (params.page) queryParams.append('page', params.page);
+        if (params.limit) queryParams.append('limit', params.limit);
+        if (params.text) queryParams.append('text', params.text);
+        if (params.is_unique !== undefined) queryParams.append('is_unique', params.is_unique);
+        if (params.source_channel) queryParams.append('source_channel', params.source_channel);
+        if (params.date_from) queryParams.append('date_from', params.date_from);
+        if (params.date_to) queryParams.append('date_to', params.date_to);
+        if (params.sort_field) queryParams.append('sort_field', params.sort_field);
+        if (params.sort_order) queryParams.append('sort_order', params.sort_order);
+        
+        const url = queryParams.toString() ? `/posts?${queryParams.toString()}` : '/posts';
+        
+        instance.get(url)
           .then((res) => {
             callback(res.data);
           })

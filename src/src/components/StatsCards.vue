@@ -13,7 +13,7 @@
           <div class="ml-5 w-0 flex-1">
             <dl>
               <dt class="text-sm font-medium text-gray-500 truncate">Всего постов</dt>
-              <dd class="text-lg font-medium text-gray-900">{{ posts.length }}</dd>
+              <dd class="text-lg font-medium text-gray-900">{{ totalCount }}</dd>
             </dl>
           </div>
         </div>
@@ -66,6 +66,11 @@
 import { computed } from 'vue';
 
 const props = defineProps({
+  totalCount: {
+    type: Number,
+    required: true,
+    defautl: 0,
+  },
   posts: {
     type: Array,
     required: true

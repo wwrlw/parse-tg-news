@@ -2,7 +2,7 @@
     <div class="bg-white shadow overflow-hidden sm:rounded-md">
         <div class="px-4 py-5 sm:p-6">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg leading-6 font-medium text-gray-900">Посты ({{ filteredPosts.length }})</h3>
+            <h3 class="text-lg leading-6 font-medium text-gray-900">Посты ({{ pagination.total }})</h3>
             <div class="flex items-center space-x-2">
               <label class="text-sm text-gray-500">Показать:</label>
               <select v-model="itemsPerPage" 
@@ -125,7 +125,7 @@
             </table>
           </div>
 
-          <div v-if="filteredPosts.length === 0 && !loading" class="text-center py-12">
+          <div v-if="posts.length === 0 && !loading" class="text-center py-12">
             <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
             </svg>
@@ -154,7 +154,7 @@
                   по 
                   <span class="font-medium">{{ endItem }}</span>
                   из 
-                  <span class="font-medium">{{ filteredPosts.length }}</span>
+                  <span class="font-medium">{{ pagination.total }}</span>
                   результатов
                 </p>
               </div>
@@ -171,7 +171,7 @@
                   
                   <button v-for="page in visiblePages" 
                           :key="page"
-                          @click="page !== '...' && (currentPage = page)"
+                          @click="goToPage(page)"
                           :disabled="page === '...'"
                           :class="[
                             'relative inline-flex items-center px-4 py-2 border text-sm font-medium',
@@ -205,8 +205,12 @@ import { ref, computed, watch } from 'vue'
 import LazyImage from '@/components/LazyImage.vue'
 
 const props = defineProps({
-  filteredPosts: {
+  posts: {
     type: Array,
+    required: true
+  },
+  pagination: {
+    type: Object,
     required: true
   },
   loading: {
@@ -219,10 +223,8 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['update:selectedPosts', 'publish', 'delete'])
+const emit = defineEmits(['update:selectedPosts', 'publish', 'delete', 'page-change', 'items-per-page-change'])
 
-const currentPage = ref(1)
-const itemsPerPage = ref(25)
 const selectAll = ref(false)
 
 const selectedPosts = computed({
@@ -230,22 +232,21 @@ const selectedPosts = computed({
   set: (value) => emit('update:selectedPosts', value)
 })
 
-const totalPages = computed(() => {
-  return Math.ceil(props.filteredPosts.length / itemsPerPage.value)
+const currentPage = computed(() => props.pagination.page)
+const totalPages = computed(() => props.pagination.totalPages)
+const itemsPerPage = computed({
+  get: () => props.pagination.limit,
+  set: (value) => emit('items-per-page-change', parseInt(value))
 })
 
-const paginatedPosts = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage.value
-  const end = start + itemsPerPage.value
-  return props.filteredPosts.slice(start, end)
-})
+const paginatedPosts = computed(() => props.posts)
 
 const startItem = computed(() => {
   return (currentPage.value - 1) * itemsPerPage.value + 1
 })
 
 const endItem = computed(() => {
-  return Math.min(currentPage.value * itemsPerPage.value, props.filteredPosts.length)
+  return Math.min(currentPage.value * itemsPerPage.value, props.pagination.total)
 })
 
 const visiblePages = computed(() => {
@@ -317,26 +318,24 @@ const toggleSelectAll = () => {
 
 const prevPage = () => {
   if (currentPage.value > 1) {
-    currentPage.value--
+    emit('page-change', currentPage.value - 1)
   }
 }
 
 const nextPage = () => {
   if (currentPage.value < totalPages.value) {
-    currentPage.value++
+    emit('page-change', currentPage.value + 1)
   }
 }
 
-watch(() => props.filteredPosts, () => {
-  currentPage.value = 1
-})
+const goToPage = (page) => {
+  if (page !== '...' && page >= 1 && page <= totalPages.value) {
+    emit('page-change', page)
+  }
+}
 
 watch(selectedPosts, () => {
   selectAll.value = selectedPosts.value.length === paginatedPosts.value.length && paginatedPosts.value.length > 0
-})
-
-watch(itemsPerPage, () => {
-  currentPage.value = 1
 })
 </script>
 

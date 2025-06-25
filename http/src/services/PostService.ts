@@ -1,6 +1,7 @@
 import { IPostService } from '../interfaces/services/IPostService';
 import { IPostRepository } from '../interfaces/repositories/IPostRepository';
 import { Post, CreatePostDto } from '../models/Post';
+import { PostQuery, PaginatedResponse } from '../types/PostQuery';
 import { NotFoundError } from '../exceptions/NotFoundError';
 
 export class PostService implements IPostService {
@@ -16,6 +17,10 @@ export class PostService implements IPostService {
 
   async getPosts(): Promise<Post[]> {
     return await this.postRepository.findAll();
+  }
+
+  async getPostsWithQuery(query: PostQuery): Promise<PaginatedResponse<Post>> {
+    return await this.postRepository.findWithQuery(query);
   }
 
   async createPost(postData: CreatePostDto): Promise<Post> {
