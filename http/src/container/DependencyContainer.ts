@@ -4,10 +4,12 @@ import { UserRepository } from '../repositories/UserRepository';
 import { PostService } from '../services/PostService';
 import { UserService } from '../services/UserService';
 import { AuthService } from '../services/AuthService';
+import { TelegramPublishService } from '../services/TelegramPublishService';
 import { GetPostUseCase } from '../use-cases/GetPostUseCase';
 import { GetPostsUseCase } from '../use-cases/GetPostsUseCase';
 import { CreateUserUseCase } from '../use-cases/CreateUserUseCase';
 import { LoginUseCase } from '../use-cases/LoginUseCase';
+import { PublishPostUseCase } from '../use-cases/PublishPostUseCase';
 
 export class DependencyContainer {
   private static instance: DependencyContainer;
@@ -41,6 +43,10 @@ export class DependencyContainer {
     return new AuthService(jwtSecret);
   }
 
+  getTelegramPublishService(): TelegramPublishService {
+    return new TelegramPublishService();
+  }
+
   getPostService(): PostService {
     return new PostService(this.getPostRepository());
   }
@@ -63,5 +69,9 @@ export class DependencyContainer {
 
   getLoginUseCase(): LoginUseCase {
     return new LoginUseCase(this.getUserService());
+  }
+
+  getPublishPostUseCase(): PublishPostUseCase {
+    return new PublishPostUseCase(this.getPostRepository(), this.getTelegramPublishService());
   }
 } 

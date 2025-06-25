@@ -19,7 +19,7 @@ const config = {
   apiId: Number(process.env.API_ID),
   apiHash: process.env.API_HASH!,
   sessionString: process.env.STRING_SESSION!,
-  targetChannelIds: process.env.TARGET_CHANNEL_IDS?.split(',').map((id: string) => Number(id.trim())) || [],
+  targetChannelIds: process.env.TARGET_CHANNELS?.split(',').map((id: string) => Number(id.trim())) || [],
   mongoUri: process.env.MONGO_URI || mongoUri,
   mongoDbName,
   mediaPath: process.env.MEDIA_PATH || './media'

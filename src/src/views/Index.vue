@@ -107,9 +107,19 @@ const filteredPosts = computed(() => {
   return filtered;
 });
 
-const publishPost = (post) => {
-  publishMessage.value = post.text;
-  showPublishModal.value = true;
+const publishPost = async (post) => {
+  try {
+    const response = await http.post(`/post/${post._id}/publish`);
+    
+    if (response.success) {
+      alert('Пост успешно опубликован в Telegram канал!');
+    } else {
+      alert('Ошибка при публикации: ' + response.message);
+    }
+  } catch (error) {
+    console.error('Error publishing post:', error);
+    alert('Ошибка при публикации поста');
+  }
 };
 
 const bulkPublish = () => {

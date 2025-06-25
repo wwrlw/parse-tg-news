@@ -5,11 +5,13 @@ import input from 'input';
 import { CreatePostDto } from '../types/index.js';
 import { MongoService } from './mongoService.js';
 import { MediaService } from './mediaService.js';
+import { PublishService } from './publishService.js';
 
 export class TelegramService {
   private client: TelegramClient;
   private mongoService: MongoService;
   private mediaService: MediaService;
+  private publishService: PublishService;
 
   // --- Добавлено для альбомов ---
   private albumBuffer: { [groupedId: string]: any[] } = {};
@@ -29,10 +31,16 @@ export class TelegramService {
     const stringSession = new StringSession(config.sessionString);
     this.client = new TelegramClient(stringSession, config.apiId, config.apiHash, {
       connectionRetries: 5,
+      deviceModel: 'Desktop',
+      systemVersion: 'Windows 10',
+      appVersion: '1.0.0',
+      langCode: 'en',
+      systemLangCode: 'en',
     });
 
     this.mongoService = new MongoService(config.mongoUri, config.mongoDbName);
     this.mediaService = new MediaService(config.mediaPath);
+    this.publishService = new PublishService();
   }
 
   async start(): Promise<void> {
@@ -160,6 +168,14 @@ export class TelegramService {
         await this.mongoService.savePost(postData);
         delete this.albumBuffer[groupId];
         delete this.albumTimers[groupId];
+        
+        // Автоматически публикуем альбом в канал
+        try {
+          await this.publishService.publishPost(postData);
+        } catch (publishError) {
+          console.error('❌ Ошибка автоматической публикации альбома:', publishError);
+        }
+        
         console.log(`📤 Сохранён альбом-пост из ${username}:`, postData);
       }, 1500);
       return; // Не сохраняем отдельные части альбома!
@@ -202,6 +218,13 @@ export class TelegramService {
 
       // Сохраняем в MongoDB
       await this.mongoService.savePost(postData);
+
+      // Автоматически публикуем в канал
+      try {
+        await this.publishService.publishPost(postData);
+      } catch (publishError) {
+        console.error('❌ Ошибка автоматической публикации:', publishError);
+      }
 
       console.log(`📤 Обработан пост из ${username}:`, 
         postData.text.substring(0, 100) + (postData.text.length > 100 ? '...' : ''));

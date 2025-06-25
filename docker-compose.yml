@@ -1,0 +1,106 @@
+version: '3.0'
+
+services:
+  mongo:
+    image: mongo:6.0
+    container_name: tg-parse-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+      - MONGO_INITDB_DATABASE=parse-news
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - bots
+
+  mongo-express:
+    image: mongo-express:1.0.0
+    container_name: tg-parse-mongo-express
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=${MONGO_USERNAME}
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGO_PASSWORD}
+      - ME_CONFIG_MONGODB_URL=mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017/
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=admin123
+    depends_on:
+      - mongo
+    networks:
+      - bots
+
+  backend:
+    build: ./http
+    container_name: tg-parse-backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    # volumes:
+    #   - ./http:/app
+    #   - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - MONGODB_URI=mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017
+      - MONGODB_DB=parse-news
+      - API_ID=${API_ID}
+      - API_HASH=${API_HASH}
+      - STRING_SESSION=${STRING_SESSION}
+      - TELEGRAM_BOT_TOKEN=8175655426:AAEw_vSc04q4LJ44Jg4WqX0rmLITy_R-hNE
+      - TELEGRAM_CHANNEL_ID=-1002897118156
+    networks:
+      - bots
+
+  parser:
+    build: ./parser
+    container_name: tg-parse-parser
+    restart: unless-stopped
+    volumes:
+      - ./parser:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - API_ID=${API_ID}
+      - API_HASH=${API_HASH}
+      - STRING_SESSION=${STRING_SESSION}
+      - MONGO_URI=mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017/parse-news?authSource=admin
+      - MONGO_USERNAME=${MONGO_USERNAME}
+      - MONGO_PASSWORD=${MONGO_PASSWORD}
+      - MONGO_HOST=mongo
+      - MONGO_PORT=27017
+      - MONGO_DB_NAME=parse-news
+      - TARGET_CHANNELS=${TARGET_CHANNELS}
+      - MEDIA_PATH=./media
+      - TELEGRAM_BOT_TOKEN=8175655426:AAEw_vSc04q4LJ44Jg4WqX0rmLITy_R-hNE
+      - TELEGRAM_CHANNEL_ID=-1002897118156
+    depends_on:
+      - mongo
+    networks:
+      - bots
+
+  frontend:
+    build: ./src
+    container_name: tg-parse-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./src:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://127.0.0.1:3001/
+    depends_on:
+      - backend
+    networks:
+      - bots
+
+volumes:
+  mongo_data:
+
+networks:
+  bots:
+    driver: bridge
